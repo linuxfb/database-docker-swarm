@@ -1,0 +1,51 @@
+version: "3"
+
+
+services: 
+
+  mysql_master:
+    image: mysql:5.7.28
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+#      resources:
+#        limits:
+#          cups: '1'
+#          memory: 2G
+      placement:
+        constraints:
+          - node.labels.type==master
+    volumes:
+      - /opt/mysql:/var/lib/mysql
+      - /opt/conf/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+    ports:
+      - "3306:3306"
+
+
+  mysql_slave:
+    image: mysql:5.7.28
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+#      resources:
+#        limits:
+#          cups: '1'
+#          memory: 2G
+      placement:
+        constraints:
+          - node.labels.type==slave
+    volumes:
+      - /opt/mysql:/var/lib/mysql
+      - /opt/conf/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456" 
+    ports:
+      - "3307:3306"
+
+networks:
+  default:
+    driver: overlay
