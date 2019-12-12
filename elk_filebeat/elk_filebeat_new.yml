@@ -1,0 +1,76 @@
+version: "3"
+
+services:
+
+  elasticsearch:
+    environment:
+      ES_JAVA_OPTS: -Xms2g -Xmx2g
+    image: elasticsearch:5.6.5
+    volumes:
+      - /test/storage/elk/elasticsearch/data:/usr/share/elasticsearch/data
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+
+  kibana:
+    image: kibana:5.6.5
+    environment:
+      ELASTICSEARCH_URL: "http://elasticsearch:9200"
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    ports:
+      - "5601:5601"
+
+
+  logstash:
+    image: logstash:5.6.5
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    volumes:
+      - /test/conf/elk/logstash.conf:/etc/logstash.conf
+    ports:
+      - "5044:5044"
+    command: ["logstash","-f","/etc/logstash.conf"]
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:5.6.5 
+    deploy:
+      mode: global
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    volumes:
+      - /test/conf/elk/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - /test/storage/logs:/usr/share/filebeat/logs
+
+networks:
+  default:
+      driver: overlay
